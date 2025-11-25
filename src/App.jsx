@@ -7,8 +7,10 @@ import {
   MousePointerClick, Rotate3d, ZoomIn,
   Sun, Moon 
 } from 'lucide-react';
+import modelPath from './panel2.glb?url';
 
-const MODEL_URL = "/PhotonTech-web/panel2.glb";
+
+const MODEL_URL = modelPath;
 
 function App() {
   // --- LÓGICA DEL MODO OSCURO ---
