@@ -8,7 +8,7 @@ import {
   Sun, Moon 
 } from 'lucide-react';
 
-const MODEL_URL = "/panel2.glb"; 
+const MODEL_URL = "/PhotonTech-web/panel2.glb";
 
 function App() {
   // --- LÓGICA DEL MODO OSCURO ---
@@ -146,7 +146,7 @@ function App() {
                       // 1. ZOOM INICIAL EXTREMO: 
                       // Un valor pequeño (ej. 0.2 o 0.3) pone la cámara MUY cerca del centro (0,0,0)
                       // Antes estaba en 1.5, por eso se veía lejos.
-                      defaultZoom={0.2} 
+                      defaultZoom={0.15} 
 
                       // 2. LÍMITE DE ACERCAMIENTO: 
                       // Permite al usuario hacer zoom hasta casi tocar el panel (0.1)

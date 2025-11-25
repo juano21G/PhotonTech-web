@@ -2,8 +2,7 @@
 /* eslint-disable react/no-unknown-property */
 import { Suspense, useRef, useLayoutEffect, useEffect, useMemo } from 'react';
 import { Canvas, useFrame, useLoader, useThree, invalidate } from '@react-three/fiber';
-import { OrbitControls, useGLTF, useFBX, useProgress, Html, Environment, ContactShadows } from '@react-three/drei';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+import { OrbitControls, useGLTF, useProgress, Html, Environment, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 
 // Constantes de ayuda
@@ -42,32 +41,23 @@ const Loader = ({ placeholderSrc }) => {
   );
 };
 
-// Componente Interno del Modelo (Lógica de centrado y materiales)
+// Componente Interno del Modelo (CORREGIDO)
 const ModelInner = ({ 
   url, 
   xOff, 
   yOff, 
   pivot, 
-  initYaw, 
-  initPitch, 
   fadeIn, 
   onLoaded 
 }) => {
   const inner = useRef(null);
-  const { camera } = useThree();
-
-  const ext = useMemo(() => url.split('.').pop().toLowerCase(), [url]);
-  const content = useMemo(() => {
-    try {
-      if (ext === 'glb' || ext === 'gltf') return useGLTF(url).scene.clone();
-      if (ext === 'fbx') return useFBX(url).clone();
-      if (ext === 'obj') return useLoader(OBJLoader, url).clone();
-    } catch (e) {
-      console.error("Error cargando modelo:", e);
-      return null;
-    }
-    return null;
-  }, [url, ext]);
+  
+  // 1. CARGA EL MODELO DIRECTAMENTE (Sin try/catch, sin useMemo envolvente)
+  // Esto permite que Suspense maneje la carga correctamente.
+  const gltf = useGLTF(url);
+  
+  // 2. Clona la escena para poder manipularla (esto sí va en useMemo)
+  const content = useMemo(() => gltf.scene.clone(), [gltf]);
 
   const pivotW = useRef(new THREE.Vector3());
 
@@ -75,33 +65,29 @@ const ModelInner = ({
     if (!content) return;
     const g = inner.current;
     
-    // 1. Centrar Matemáticamente el objeto
+    // Centrar Matemáticamente el objeto
     g.updateWorldMatrix(true, true);
     const box = new THREE.Box3().setFromObject(g);
     const sphere = box.getBoundingSphere(new THREE.Sphere());
-    const height = box.max.y - box.min.y;
     const center = box.getCenter(new THREE.Vector3());
 
-    // Escala normalizada para que no sea gigante ni diminuto
+    // Escala normalizada
     const s = 1 / (sphere.radius * 2); 
-    g.scale.setScalar(s*2.5); // Multiplicador para tamaño visual agradable
+    g.scale.setScalar(s * 2.5); 
 
-    // Posicionar el objeto para que su centro esté en el origen (0,0,0)
+    // Posicionar
     g.position.set(-center.x * s * 2.5, -center.y * s * 2.5, -center.z * s * 2.5);
-    
-    // Aplicar Offset manual del usuario (para bajar el poste, por ejemplo)
     g.position.y += yOff; 
     g.position.x += xOff;
 
-    // Configuración de Sombras y Materiales
+    // Sombras y Materiales
     g.traverse(o => {
       if (o.isMesh) {
         o.castShadow = true;
         o.receiveShadow = true;
-        // Material optimization
         if (o.material) {
             o.material.side = THREE.DoubleSide;
-            o.material.envMapIntensity = 1.2; // Brillo extra para metales
+            o.material.envMapIntensity = 1.2;
         }
         if (fadeIn) {
           o.material.transparent = true;
@@ -110,11 +96,10 @@ const ModelInner = ({
       }
     });
 
-    // Guardar la posición del pivote para los controles
     g.getWorldPosition(pivotW.current);
     pivot.copy(pivotW.current);
 
-    // Fade In Animation
+    // Fade In
     if (fadeIn) {
       let t = 0;
       const id = setInterval(() => {
@@ -135,7 +120,6 @@ const ModelInner = ({
     }
   }, [content, xOff, yOff, fadeIn, onLoaded, pivot]);
 
-  if (!content) return null;
   return (
     <group ref={inner}>
       <primitive object={content} />
@@ -215,7 +199,6 @@ const ModelViewer = ({
       {showScreenshotButton && (
         <button
           onClick={capture}
-          /* CAMBIO AQUÍ: Cambié 'right-4' por 'left-4' */
           className="absolute top-4 left-4 z-20 bg-white/10 backdrop-blur-md border border-white/20 text-white p-2 rounded-full hover:bg-white/20 transition-all shadow-lg"
           title="Tomar Captura"
         >
@@ -261,36 +244,25 @@ const ModelViewer = ({
           />
         </Suspense>
 
-        {/* --- CONTROLES (La parte importante para móviles) --- */}
+        {/* --- CONTROLES --- */}
         <OrbitControls 
           makeDefault
-          
-          /* 1. CONFIGURACIÓN DE MOVIMIENTO */
-          enableDamping={true} // Inercia suave (como mantequilla)
+          enableDamping={true} 
           dampingFactor={0.05}
-          
           autoRotate={autoRotate}
           autoRotateSpeed={autoRotateSpeed}
-          
-          /* 2. LIMITES */
           minDistance={minZoomDistance}
           maxDistance={maxZoomDistance}
-          
-          /* 3. PANEO (MOVER ARRIBA/ABAJO/LADOS) */
           enablePan={true} 
           panSpeed={1}
-
-          /* 4. CONFIGURACIÓN MOUSE (PC) */
           mouseButtons={{
-            LEFT: THREE.MOUSE.ROTATE,   // Clic Izquierdo: Rotar
-            MIDDLE: THREE.MOUSE.PAN,    // Rueda Clic: Panear
-            RIGHT: THREE.MOUSE.ROTATE   // Clic Derecho: Rotar (o Pan si prefieres)
+            LEFT: THREE.MOUSE.ROTATE,
+            MIDDLE: THREE.MOUSE.PAN,
+            RIGHT: THREE.MOUSE.ROTATE
           }}
-
-          /* 5. CONFIGURACIÓN TACTIL (CELULAR) - CLAVE */
           touches={{
-            ONE: THREE.TOUCH.ROTATE,        // 1 Dedo: Rotar
-            TWO: THREE.TOUCH.DOLLY_PAN      // 2 Dedos: Zoom + Panear
+            ONE: THREE.TOUCH.ROTATE,
+            TWO: THREE.TOUCH.DOLLY_PAN
           }}
         />
       </Canvas>
