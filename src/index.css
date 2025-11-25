@@ -1,0 +1,62 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Configuración para que el modo oscuro funcione con la clase "dark" en HTML */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: "IBM Plex Mono", monospace;
+  --font-sans: "Inter", sans-serif;
+
+  /* Colores */
+  --color-primary: #1A535C;
+  --color-secondary: #F7B538;
+  --color-tertiary: #4ECDC4;
+  --color-bg-light: #F9F7F3;
+  --color-bg-dark: #101a1b;
+  --color-text-light: #A99985;
+  --color-text-dark: #d4c8b8;
+
+  /* Animación Lenta del Sol (12s para que sea elegante) */
+  --animate-pulse-slow: pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg-light);
+  color: var(--color-primary);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease; /* Transición suave al cambiar de modo */
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Botones con Inter Bold y animación Pop */
+button {
+  font-family: var(--font-sans);
+  letter-spacing: -0.01em;
+  font-weight: 700;
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
+
+button:hover {
+  transform: scale(1.05);
+  filter: brightness(1.15);
+  cursor: pointer;
+}
+
+/* Estilos específicos cuando está activo el modo oscuro */
+.dark body {
+  background-color: var(--color-bg-dark);
+  color: var(--color-bg-light);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
